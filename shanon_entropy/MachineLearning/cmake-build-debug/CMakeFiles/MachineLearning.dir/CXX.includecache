@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/jacklee-kopij/CLionProjects/MachineLearning/main.cpp
+string
+-
+iostream
+-
+curl/curl.h
+-
+tidy/tidy.h
+-
+tidy/buffio.h
+-
+
