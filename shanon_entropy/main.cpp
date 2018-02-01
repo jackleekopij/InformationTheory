@@ -2,6 +2,7 @@
 #include <math.h>
 #include <set>
 #include <map>
+#include <vector>
 
 using namespace std;
 
@@ -105,40 +106,97 @@ inline double * NormaliseArray (T const& array, int array_length){
     return normalised_array;
     };
 
-/*
+
+
+// iterate across a vector of vectors to calculate the joint distribution
 template <typename T>
-inline T const& Normalise
-*/
+inline vector< vector<double>>  NormaliseMultiArray (T  multi_array){
+
+    double normalisation_constant = 0;
+
+    for(int row = 0 ; row < multi_array.size(); row++){
+        for(int col = 0; col < multi_array[row].size(); col++){
+            cout << "The first value of the iterator vector is " << multi_array[row][col] << endl;
+            normalisation_constant += multi_array[row][col];
+        }
+    }
+
+    vector< vector<double> > joint_distribution = multi_array;
+
+    for(int row = 0 ; row < multi_array.size(); row++){
+        for(int col = 0; col < multi_array[row].size(); col++){
+
+            joint_distribution[row][col] = multi_array[row][col] / normalisation_constant;
+        }
+    }
+    return joint_distribution;
+
+}
+
+template <typename T>
+inline vector< vector<double>>  ShannonEntropyMultiArray (T  normalised_multi_array){
+
+    double total_entropy = 0;
+    double row_entropy = 0;
+    vector< vector<double> > joint_distribution = normalised_multi_array;
+
+    for(int row = 0 ; row < normalised_multi_array.size(); row++){
+        double row_norm_constant = 0;
+        for(auto& element:normalised_multi_array[row]) row_norm_constant += element;
+        for(int col = 0; col < normalised_multi_array[row].size(); col++){
+            for(auto& element:normalised_multi_array[row]) row_entropy += element/row_norm_constant * log2(element/row_norm_constant);
+            total_entropy += row_norm_constant * row_norm_constant;
+        }
+    }
+    return joint_distribution;
+
+}
+
+
+// Will return the pointer for the first array of arrays.
+
 
 int main() {
     // Create the decks of cards to calculate the mutual information for.
     string firstDeck [ ] = {"queen", "jack"};
     string secondDeck [ ]=  {"king", "ace" , "queen", "king"};
 
+    int i = 0 ;
+
+
     // Empty array length is only allowed for the first dimension.
     double marginal_distribution [ ] = {175, 0.75, 2.25};
-    double joint_distribution [ ][3] = {{125, 1.4, 1.5},{2.25, 0.75, 0.75}};
+    vector< vector<double> > joint_distribution = {{1, 14000000, 150},{22, 90, 10}};
 
-    cout << "The marginal distribution is:" << endl;
-    cout << "The size of the marginal distribution is " << getArrayLength(marginal_distribution) << endl;
-    cout << "The size of the joint distribution is [" << getMultiArrayLength(joint_distribution).row << ", " << getMultiArrayLength(joint_distribution).column << "]" << endl;
+    vector< vector<double> > joint_distribution_normalised = NormaliseMultiArray(joint_distribution);
+
+    cout << endl << "Size of the joint distribution " << joint_distribution_normalised[0].size() << endl;
+
     for(auto& element:marginal_distribution) cout << element << ", ";
 
-    //for (auto elemnet=marginal_distribution.begin())
+    int size = 10;
+    int index = 0;
 
-    cout << endl;
+    std::vector<int> test_vector(size);
 
-    cout << endl << "The joint distribution is:" << joint_distribution << endl;
-    cout << "The marginal distribution is:" << marginal_distribution << endl;
+    for(index; index < size; index++){
+        test_vector[i] = i + 5;
+    }
+
+
+    double sum = 0;
+
+    vector<int>::iterator first_element = test_vector.begin();
+
+
+    cout << "Sum total " << sum << endl;
 
     size_t  array_length = getArrayLength(marginal_distribution);
 
-    double normalised_arry =  *(NormaliseArray(marginal_distribution, array_length));
-
-
+    double normalised_array =  *(NormaliseArray(marginal_distribution, array_length));
+    size_multi_array joint_distribution_dim = getMultiArrayLength(joint_distribution);
 
     const size_t firstDeckLength = getArrayLength(firstDeck);
-    cout << "The length of the list is: " << firstDeckLength << endl;
     // Get counts of each of the card strings.
     map<string, double> firstDeckProbDist = calc_counter_occurance(firstDeck, firstDeckLength);
 
@@ -149,7 +207,7 @@ int main() {
 
     // Calculate the Shannon entropy
     double entropy = calc_Shannon_entropy(firstDeckProbDist);
-    cout << "The entropy for the the current card selection is: " << entropy << endl;
+
 
     // Calculate the conditional entropy H(first deck| second deck)
     const size_t secondDeckLength = getArrayLength(secondDeck);
