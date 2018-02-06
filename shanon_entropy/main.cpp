@@ -134,9 +134,9 @@ inline vector< vector<double>>  NormaliseMultiArray (T  multi_array){
 }
 
 template <typename T>
-inline vector< vector<double>>  ShannonEntropyMultiArray (T  normalised_multi_array){
+inline double ConditionalEntropyMultiArray (T  normalised_multi_array){
 
-    double total_entropy = 0;
+    double conditional_entropy = 0;
     double row_entropy = 0;
     vector< vector<double> > joint_distribution = normalised_multi_array;
 
@@ -145,10 +145,51 @@ inline vector< vector<double>>  ShannonEntropyMultiArray (T  normalised_multi_ar
         for(auto& element:normalised_multi_array[row]) row_norm_constant += element;
         for(int col = 0; col < normalised_multi_array[row].size(); col++){
             for(auto& element:normalised_multi_array[row]) row_entropy += element/row_norm_constant * log2(element/row_norm_constant);
-            total_entropy += row_norm_constant * row_norm_constant;
+            conditional_entropy+= row_norm_constant * row_norm_constant;
         }
     }
-    return joint_distribution;
+    return conditional_entropy;
+
+}
+
+
+
+double MarginalEntropy (vector<vector<double>> normalised_multi_array, char variable_label){
+    double marginal_entropy = 0;
+    double normalisation_sum = 0;
+    vector < double > prob_dist;
+
+
+    if (variable_label == 'x'){
+        for(int col = 0; col < normalised_multi_array[0].size(); col++){
+            double marginal_prob = 0;
+            for(int row = 0 ; row < normalised_multi_array.size(); row++){
+                marginal_prob += normalised_multi_array[row][col];
+            }
+            cout << "For iteration " << col << " the sum total is " << marginal_prob << endl;
+            prob_dist.push_back(marginal_prob);
+            normalisation_sum += marginal_prob;
+        }
+    }
+    else if (variable_label == 'y'){
+        for(int row = 0 ; row < normalised_multi_array.size(); row++){
+            double marginal_prob = 0;
+            for(int col = 0; col < normalised_multi_array[row].size(); col++){
+                marginal_prob += normalised_multi_array[row][col];
+            }
+            prob_dist.push_back(marginal_prob);
+            normalisation_sum += marginal_prob;
+        }
+    }
+    else{
+        cout << "No correctly supplied variable label" << endl;
+    }
+    for (vector<double>::const_iterator i = prob_dist.begin(); i < prob_dist.end(); i++)
+        cout << "The current probability distribution" <<  *i << endl;
+
+
+    for (auto& element:prob_dist) marginal_entropy += (element/normalisation_sum) * log2(element/normalisation_sum);
+    return marginal_entropy * (-1);
 
 }
 
@@ -170,7 +211,7 @@ int main() {
 
     vector< vector<double> > joint_distribution_normalised = NormaliseMultiArray(joint_distribution);
 
-    cout << endl << "Size of the joint distribution " << joint_distribution_normalised[0].size() << endl;
+    cout << endl << "Size of the joint distribution " << joint_distribution_normalised[0][1] << endl;
 
     for(auto& element:marginal_distribution) cout << element << ", ";
 
@@ -213,8 +254,12 @@ int main() {
     const size_t secondDeckLength = getArrayLength(secondDeck);
 
 
+    vector < vector< double > > marginal_distribution_test = {{0.125, 0.0625, 0.03125, 0.03125}, {0.0625, 0.125, 0.03125, 0.03125}, {0.0625,0.0625,0.0625,0.0625},{0.25, 0, 0, 0}};
 
 
+    
+    double marginal_entropy = MarginalEntropy(marginal_distribution_test, char('y'));
+    cout << "The marginal entropy for x: " << marginal_entropy << endl;
 
     return 0;
 }
