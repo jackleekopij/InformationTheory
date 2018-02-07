@@ -37,42 +37,7 @@ double calc_Shannon_entropy (map<string, double> prob_distribution){
     return shannon_entropy;
 }
 
-/*
-const size_t getArraySize(string dataArray [ ]){
-    return sizeof(dataArray)/ sizeof(dataArray[0]);
-}
-*/
 
-/*
-map<string, map<string, double>> jointDistribution (string combinedArray [ ], int arrayLength){
-    // Parse probability distribution
-    string delimiter = ",";
-    string firstArray [ ] = {};
-    string secondArray [ ]= {};
-
-    int i;
-    for (i = 0; i < arrayLength; i++){
-
-    }
-
-    int i;
-    for (i=0; i < firstArrayLength; i++ ){
-
-    }
-};
-*/
-
-// Templates are a way to define an independent type for a class or function.
-// Things like vector<int> is a generic type for storing integers in a vector.
-// 'inline' will enable compiler optimisation by not having to jump around the
-//      place to execute the function.
-
-// 'size_t' is the return type of the funciton which should calculate the size
-// of the array.
-
-// 'struct' is used to group member types together. 'structs' should only access
-// or set data and should contain NO functionality. Will return a
-// multi-dimensional array.
 struct size_multi_array {
     size_t row;
     size_t column;
@@ -133,22 +98,54 @@ inline vector< vector<double>>  NormaliseMultiArray (T  multi_array){
 
 }
 
-template <typename T>
-inline double ConditionalEntropyMultiArray (T  normalised_multi_array){
 
-    double conditional_entropy = 0;
+double ConditionalEntropyMultiArray (vector<vector<double>>  normalised_multi_array, char conditioning_variable){
+    double total_conditional_entropy = 0;
     double row_entropy = 0;
-    vector< vector<double> > joint_distribution = normalised_multi_array;
 
-    for(int row = 0 ; row < normalised_multi_array.size(); row++){
-        double row_norm_constant = 0;
-        for(auto& element:normalised_multi_array[row]) row_norm_constant += element;
-        for(int col = 0; col < normalised_multi_array[row].size(); col++){
-            for(auto& element:normalised_multi_array[row]) row_entropy += element/row_norm_constant * log2(element/row_norm_constant);
-            conditional_entropy+= row_norm_constant * row_norm_constant;
+    if(conditioning_variable == 'x') {
+        for (int col = 0; col < normalised_multi_array[0].size(); col++){
+            double row_norm_constant = 0;
+            double entropy_by_column = 0;
+            vector<double> conditioned_entropy = {};
+            for (int row = 0;  row < normalised_multi_array.size(); row++){
+                row_norm_constant += normalised_multi_array[row][col];
+
+                conditioned_entropy.push_back(normalised_multi_array[row][col]);
+            }
+            for(int k = 0; k < conditioned_entropy.size(); k ++){
+                double conditioned_value = conditioned_entropy[k]/row_norm_constant;
+                if (conditioned_value > 0){
+                    entropy_by_column += (conditioned_value) * log2(conditioned_value);
+                }
+            }
+
+            total_conditional_entropy += row_norm_constant *entropy_by_column;
         }
+
+        return total_conditional_entropy * (-1);
     }
-    return conditional_entropy;
+    else if (conditioning_variable == 'y'){
+
+        for (int row = 0; row < normalised_multi_array.size(); row++) {
+            double row_entropy = 0;
+
+            double row_norm_constant = 0;
+            for (auto &element:normalised_multi_array[row]) row_norm_constant += element;
+            for (int col = 0; col < normalised_multi_array[row].size(); col++) {
+                double x_condtioned_on_y = normalised_multi_array[row][col] / row_norm_constant;
+                if (x_condtioned_on_y > 0){
+                    row_entropy += x_condtioned_on_y * log2(x_condtioned_on_y);
+                }
+            }
+            total_conditional_entropy += row_norm_constant * row_entropy;
+        }
+
+        return total_conditional_entropy * (-1);
+    }else{
+        cout << "Incorrect format on of conditioning variable" << endl;
+    }
+    return total_conditional_entropy;
 
 }
 
@@ -166,7 +163,6 @@ double MarginalEntropy (vector<vector<double>> normalised_multi_array, char vari
             for(int row = 0 ; row < normalised_multi_array.size(); row++){
                 marginal_prob += normalised_multi_array[row][col];
             }
-            cout << "For iteration " << col << " the sum total is " << marginal_prob << endl;
             prob_dist.push_back(marginal_prob);
             normalisation_sum += marginal_prob;
         }
@@ -184,18 +180,15 @@ double MarginalEntropy (vector<vector<double>> normalised_multi_array, char vari
     else{
         cout << "No correctly supplied variable label" << endl;
     }
-    for (vector<double>::const_iterator i = prob_dist.begin(); i < prob_dist.end(); i++)
-        cout << "The current probability distribution" <<  *i << endl;
-
 
     for (auto& element:prob_dist) marginal_entropy += (element/normalisation_sum) * log2(element/normalisation_sum);
     return marginal_entropy * (-1);
 
 }
 
-
-// Will return the pointer for the first array of arrays.
-
+double CalculateMutualInformation(double MarginalInformation, double ConditionalInformation){
+    return MarginalInformation - ConditionalInformation;
+}
 
 int main() {
     // Create the decks of cards to calculate the mutual information for.
@@ -253,13 +246,18 @@ int main() {
     // Calculate the conditional entropy H(first deck| second deck)
     const size_t secondDeckLength = getArrayLength(secondDeck);
 
+    // cordinates y is the first index and x is the second.
+    vector < vector< double > > marginal_distribution_test = {{0.125, 0.0625, 0.03125, 0.03125}, {0.0625, 0.125, 0.03125, 0.03125}, {0.0625,0.0625,0.0625,0.0625},{0.25, 0.0, 0.0, 0.0}};
 
-    vector < vector< double > > marginal_distribution_test = {{0.125, 0.0625, 0.03125, 0.03125}, {0.0625, 0.125, 0.03125, 0.03125}, {0.0625,0.0625,0.0625,0.0625},{0.25, 0, 0, 0}};
-
-
-    
+    // The second parameter in the ConditionalEntropyMultiArray is the variable to condition on.
+    double conditional_entropy = ConditionalEntropyMultiArray(marginal_distribution_test, char('x'));
+    cout << "The conditional entropy for x given y: " << conditional_entropy << endl;
     double marginal_entropy = MarginalEntropy(marginal_distribution_test, char('y'));
     cout << "The marginal entropy for x: " << marginal_entropy << endl;
+
+    // Calculate the mutual information/information gain
+    double  InformationGain = CalculateMutualInformation(marginal_entropy, conditional_entropy);
+    cout << "The information gain is: " << InformationGain << endl;
 
     return 0;
 }
