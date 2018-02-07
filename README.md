@@ -11,12 +11,13 @@ Entropy can be seen as the amount of uncertainty within a random variable. The h
 
 
 Example: A coin with a 90% chance of heads will have less *entropy (uncertainty)* than a coin with 50% chance of the heads. 
-Entropy for coin with 90% chance of heads:
-    *Entropy* = -(0.9 * log(0.9) + 0.1 * log(0.1))
-              = 0.3251
+Entropy for coin with 90% chance of heads:\
+    *Entropy* = -(0.9 * log(0.9) + 0.1 * log(0.1))\
+              = 0.3251\
     
-Entropy for coin with 50% chance of heads:
-    *Entropy* = -(0.5 * log(0.5) + 0.5 * log(0.5))
-              = 0.6931
+Entropy for coin with 50% chance of heads:\
+    *Entropy* = -(0.5 * log(0.5) + 0.5 * log(0.5))\
+              = 0.6931\
 
+From above, the coin with the 90% chance has a smaller measure of *entropy*. Aligned with our definition of entropy, *the more uncertainty, the higher the entropy measure*, there is better odds in guessing the outcome of the coin with with a 90% chance of heads than there is with the coin that has a 50% chance of flipping heads. From this we say the fair coin (50% chance) has a higher entropy than that of the 90% chance of heads coin. 
 ## Conditional information 
