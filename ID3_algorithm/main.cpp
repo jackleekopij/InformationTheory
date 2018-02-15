@@ -22,6 +22,9 @@ data_dimensions getNumberOfTrainingExamples( vector<vector<string>> training_dat
     return data_dimensions{num_training_data, number_of_variables};
 }
 
+
+
+
 vector<vector<string>> transpose_vector_of_vectors(vector<vector<string>> training_data){
     int row_number =training_data[0].size();
     int col_number =training_data.size();
@@ -41,7 +44,7 @@ vector<vector<string>> transpose_vector_of_vectors(vector<vector<string>> traini
 
 
 
-double calculateEntropy( vector<vector<string>> training_data, map<int,string> training_data_column_map,   double normalising_value){
+string calculateEntropy( vector<vector<string>> training_data, map<int,string> training_data_column_map,   double normalising_value){
     map<string,double> entropy_store;
     for(int i=0; i < training_data.size(); i++){
         // training data by transposed row
@@ -61,10 +64,37 @@ double calculateEntropy( vector<vector<string>> training_data, map<int,string> t
         entropy_store[training_data_column_map[i]] = entropy;
     }
     for (auto& element:entropy_store) cout << "The entropy for " << element.first << " is: " << element.second << endl;
-    return 7.2;
+
+    double max_value = 0;
+    string highest_entropy_variable = "";
+    for (auto& element:entropy_store) cout << "The entropy store is: " << element.second << endl;
+    for (auto& element:entropy_store) if (element.second > max_value and element.first != "Id") {max_value = element.second; highest_entropy_variable = element.first;};
+
+    return highest_entropy_variable;
 }
 
 
+
+
+string getIndexOfSplitValues(vector<vector<string>> training_data, string variable_to_split, map<int,string> variable_to_col_num){
+    // Get col number of the variable to split the training data on.
+    int split_col_number;
+    for(map<int,string>::iterator it = variable_to_col_num.begin(); it != variable_to_col_num.end(); it++){
+        if (it->second == variable_to_split) split_col_number = it->first;
+    }
+    vector<string> variable_split_data = training_data[split_col_number];
+    map<string, vector<int>> variable_data_split_by_level;
+
+    for(int i=0; i<variable_split_data.size(); i++){
+        variable_data_split_by_level[variable_split_data[i]].push_back(i+1);
+    }
+
+    // Print out the contents of the split data map
+    cout << "The column to split on is : " << variable_to_split << endl;
+    for(auto& element:variable_data_split_by_level) for(auto& index:element.second) cout << "The variable to split is " << variable_to_split << " with value " << element.first << " has the indexes " << index << endl;
+
+    return "Complete";
+}
 
 int main() {
     // Create example training data.
@@ -82,12 +112,17 @@ int main() {
 
     vector<vector<string>> transpose_test = transpose_vector_of_vectors(data_matrix_vectors);
 
-    double entropy = calculateEntropy(transpose_test, training_data_column_map, 7.0);
+    string important_variable = calculateEntropy(transpose_test, training_data_column_map, 7.0);
 
+    cout << "The important variable is: " << important_variable << endl;
+
+    // Test the variable split
+    string variable_test_split = getIndexOfSplitValues(transpose_test, important_variable, training_data_column_map);
+
+    cout << "Variable test split: " << variable_test_split << endl;
 
     // print out the transposed data matrix
     cout << "The transposed matrix is: " << transpose_test[0][0] << endl;
-    //for(auto & element:transpose_test) for(auto & index:element) cout << index << endl;
 
 
     // print out a map value
@@ -97,7 +132,5 @@ int main() {
     data_dimensions training_data_dimensions = getNumberOfTrainingExamples(data_matrix_vectors);
     int num_training_examples = training_data_dimensions.num_examples;
     int num_variables = training_data_dimensions.num_variables;
-
-    cout << "The training data has: " << num_variables << " number of variables and " << num_training_examples << " examples." <<  endl;
 
 }
