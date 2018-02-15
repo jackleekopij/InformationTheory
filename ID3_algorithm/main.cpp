@@ -119,16 +119,20 @@ int main() {
     // Test the variable split
     string variable_test_split = getIndexOfSplitValues(transpose_test, important_variable, training_data_column_map);
 
-    cout << "Variable test split: " << variable_test_split << endl;
-
-    // print out the transposed data matrix
-    cout << "The transposed matrix is: " << transpose_test[0][0] << endl;
 
 
     // print out a map value
     cout << "The value for the integer 1 in the map: " << training_data_column_map[10] << endl;
 
     // Print size of the training data
+
+
+    // Get remaining variables for each branch conditional on data removed.
+
+
+
+
+
     data_dimensions training_data_dimensions = getNumberOfTrainingExamples(data_matrix_vectors);
     int num_training_examples = training_data_dimensions.num_examples;
     int num_variables = training_data_dimensions.num_variables;
