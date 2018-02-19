@@ -1,3 +1,0 @@
-/Users/jacklee-kopij/CLionProjects/ID3_algorithm/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/Users/jacklee-kopij/CLionProjects/ID3_algorithm/cmake-build-debug/CMakeFiles/edit_cache.dir
-/Users/jacklee-kopij/CLionProjects/ID3_algorithm/cmake-build-debug/CMakeFiles/ID3_algorithm.dir
