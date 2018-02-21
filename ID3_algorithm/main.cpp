@@ -48,25 +48,68 @@ vector<vector<string>> transpose_vector_of_vectors(vector<vector<string>> traini
 
 
 
+double getEntropy(vector<string> vegetation_values){
+    double normalisation_const = vegetation_values.size();
+    map<string, double> entropy_store;
+    double entropy;
 
-string calculateEntropy( vector<vector<string>> training_data, map<int,string> training_data_column_map,   double normalising_value){
-    map<string,double> entropy_store;
-    for(int i=0; i < training_data.size(); i++){
-        // training data by transposed row
-        map<string,double> row_counts;
-        for(int j=0; j<training_data[i].size(); j++){
-            if(row_counts.count(training_data[i][j])){
-                row_counts[training_data[i][j]] += 1.0/normalising_value;
-            }
-            else{
-                row_counts[training_data[i][j]] = 1.0/normalising_value;
-            }
+    for(vector<string>::iterator it=vegetation_values.begin(); it!=vegetation_values.end();it++){
+        if (entropy_store.count(*it)) {
+            entropy_store[*it] += 1.0 / normalisation_const;
+        } else {
+            entropy_store[*it] = 1.0 / normalisation_const;
         }
-        // calculate entropy
-        double entropy = 0;
-        for(auto& element:row_counts) entropy += (-1) * element.second * log2(element.second);
-        entropy_store[training_data_column_map[i]] = entropy;
     }
+
+    for (auto& element:entropy_store) cout << "The proability values are: " << element.second << endl;
+
+    for(auto& index:entropy_store) entropy += (-1) * index.second * log2(index.second);
+    return entropy;
+}
+
+
+double getEntropyForMap(map<string, vector<string>> vegetation_map, map<string, double> partition_prob_map){
+    double total_entropy;
+    for (auto& partitioned_variable:vegetation_map) total_entropy += partition_prob_map[partitioned_variable.first] * getEntropy(partitioned_variable.second);
+    return total_entropy;
+}
+
+string calculateEntropy( vector<vector<string>> training_data, map<int,string> training_data_column_map,   double normalising_value, int classification_variable){
+    map<string,double> entropy_store;
+    map<string, map<string, vector<string>>> classification_partitions;
+    map<string, map<string,double>> partition_counts_by_level;
+    for(int i=1; i < training_data.size(); i++){
+        string variable_analysed = training_data_column_map[i];
+        // Only get cardinality count if for non-classification variable.
+        if(i!= classification_variable) {
+            map<string, double> row_counts;
+            map<string, vector<string>> classification_variables_by_levels;
+            for (int j = 0; j < training_data[i].size(); j++) {
+                if (row_counts.count(training_data[i][j])) {
+                    row_counts[training_data[i][j]] += 1.0 / normalising_value;
+                } else {
+                    row_counts[training_data[i][j]] = 1.0 / normalising_value;
+                }
+                classification_variables_by_levels[training_data[i][j]].push_back(training_data[classification_variable][j]);
+            }
+            classification_partitions[variable_analysed] = classification_variables_by_levels;
+            partition_counts_by_level[variable_analysed] = row_counts;
+            double entropy = 0;
+            for (auto &element:row_counts) entropy += (-1) * element.second * log2(element.second);
+            entropy_store[variable_analysed] = entropy;
+        }
+    }
+
+
+
+    for(auto& variables:classification_partitions) cout << "The classification partitions are: " << variables.first << endl;
+
+    for(auto& variable_names:classification_partitions["elevation"]) cout << "The levels of elevation are " << variable_names.first << endl;
+
+    cout << "Entropy for elevation: " << endl;
+    cout << getEntropyForMap(classification_partitions["stream"], partition_counts_by_level["stream"]);
+
+
 
     double max_value = 0;
     string highest_entropy_variable = "";
@@ -79,8 +122,8 @@ string calculateEntropy( vector<vector<string>> training_data, map<int,string> t
 
 
 // Use the filtered map to only iterate over the data points which are in the current level of a variable.
-string calculateEntropySecondary( vector<vector<string>> training_data, vector<int> variable_selection, map<int, string> training_data_column_map,  vector<int> row_selection){
-    // calculateEntropySecondary returns a variable f
+string calculateEntropySecondary( vector<vector<string>> training_data, vector<int> variable_selection, map<int, string> training_data_column_map,  vector<int> row_selection, string variable_name){
+    // calculateEntropySecondary returns a string identifing variable with highest IG.
     // args:
     //  training_data: a matrix of training data
     //  variable_selection: a vector selecting variables to calculate entropy for
@@ -93,7 +136,8 @@ string calculateEntropySecondary( vector<vector<string>> training_data, vector<i
 
     // dereference the iterator to extract the
     for(vector<int>::iterator i=variable_selection.begin();i!= variable_selection.end(); i++){
-        map<string,double> reduced_row_counts;
+        map<string,double> reduced_row_counts = {};
+        double entropy = 0;
         for(auto& element:row_selection){
             if(reduced_row_counts.count(training_data[*i][element])){
                 reduced_row_counts[training_data[*i][element]] += 1.0/normalising_value;
@@ -101,15 +145,20 @@ string calculateEntropySecondary( vector<vector<string>> training_data, vector<i
             else{
                 reduced_row_counts[training_data[*i][element]] = 1.0/normalising_value;
             }
+            cout << "Current entropy for " << element << " is: " << reduced_row_counts[training_data[*i][element]] << endl;
         }
-        double entropy = 0;
+
         for(auto& element:reduced_row_counts) entropy += (-1) * element.second * log2(element.second);
         entropy_store[training_data_column_map[*i]] = entropy;
     }
 
+
     double max_value = 0;
     string highest_entropy_variable = "";
-    for (auto& element:entropy_store) if (element.second > max_value and element.first != "Id") {max_value = element.second; highest_entropy_variable = element.first;};
+
+    for (auto& element:entropy_store) if (element.second >= max_value and element.first != "Id") {max_value = element.second; highest_entropy_variable = element.first;};
+
+    cout << "The maximum entropy score is for " << variable_name << " is " << max_value << endl;
 
     return highest_entropy_variable;
 }
@@ -122,6 +171,12 @@ string calculateEntropySecondary( vector<vector<string>> training_data, vector<i
 // level.
 map<string, vector<int>> getMapIndexOfSplitValues(vector<vector<string>> training_data, string variable_to_split, map<int,string> variable_to_col_num){
     // Get col number of the variable to split the training data on.
+    // getMapIndexOfSplitValues returns a map with variable levels as key and row indexes as values
+    // args:
+    //  training_data: a data set to calculate the division on.
+    //  variable_to_split: the variable to calculate the division on.
+    //  variable_to_col_num: a map to identify the column of 'variable_to_split' in 'training_data'
+
     int split_col_number;
     for(map<int,string>::iterator it = variable_to_col_num.begin(); it != variable_to_col_num.end(); it++){
         if (it->second == variable_to_split) split_col_number = it->first;
@@ -147,36 +202,54 @@ data_subest_entropy_calc GetNextDichotomiser(vector<vector<string>> training_dat
     //  training_data_transposed: is the training data to calculate the information gain on.
     //  prev_variable: identifying which variables was the previous to have highest IG.
     //  variable_column_map: a map to assist identifying column numbers to exclude from IG calc.
-    //  map_of_prev_IG_split: a map to identify groups of indexes to include in next IG calc.
+    //  map_of_prev_IG_split: a map to identify groups of indexes to include in next IG calc. Key: variable levels, Value: index vector
 
     // Create a vector of column numbers to include in IG calculation.
     vector<int> column_num_to_include;
     for(auto& variable:variable_column_map) if(variable.second != prev_variable){column_num_to_include.push_back(variable.first);};
 
-    for(auto& non_prev_variable:column_num_to_include) cout << "Condition training on the following: " << non_prev_variable << endl;
 
     // Get a vector of int's for each level of 'prev_variable' to calc IG for next divisions/branches.
     // ***TEST: DIVISION LEVEL="HIGH"
     // ALWAYS REMEMBER THE DOUBLE QUOTES FOR A STRING!
     vector<int> row_subset_index;
-    vector<int> data_index_for_division = map_of_prev_IG_split.find("high")->second;
-    for(auto& element:data_index_for_division) cout << "A value in my index is: " << element << endl;
-    for(auto& element:data_index_for_division) row_subset_index.push_back(element);
+    vector<int> data_index_for_division = map_of_prev_IG_split.find("highest")->second;
+    for(auto& element:map_of_prev_IG_split) cout << "The keys in the data set are: " << element.first << endl;
 
-    return {column_num_to_include, row_subset_index};
+    map<string, string> prev_variable_level_and_variable_for_division;
+
+    for(auto& row_index:map_of_prev_IG_split){
+        string variable_for_division = calculateEntropySecondary(training_data_transposed, column_num_to_include, variable_column_map, row_index.second, row_index.first);
+        cout << "The variable for divison: " << variable_for_division << endl;
+        prev_variable_level_and_variable_for_division[row_index.first] = variable_for_division;
+    }
+    // Calculate entropy for each level of 'prev_variable'
+    //for()
+    //calculateEntropySecondary(training_data_transposed, subset_columns_and_rows.column_variable_index, variable_column_map, subset_columns_and_rows.data_row_subset);
+
+    for(auto& IG_divsion:prev_variable_level_and_variable_for_division) cout << "The level " << IG_divsion.first << " has " << IG_divsion.second << " as its next branch in the tree." << endl;
+
+    return {column_num_to_include, data_index_for_division};
+    //return {column_num_to_include, row_subset_index};
 
 }
 
 
+int getMapKeyFromValue(map<int, string> training_data_column_map, string variable_value){
+    // getMapKeyFromValue returns an int for the column index of the desired variable
+    // args:
+    //  training_data_column_map: a map identifying column indexes for variables.
+    //  variable_value: string to get column number for.
+    int column_index = -1;
+    for(auto& element:training_data_column_map) if(element.second == variable_value){column_index = element.first;};
+    return column_index;
+}
+
 
 
 int main() {
-    // A data structure to build the ordering of importance of variables.
-    // string: is the name of the variable that was split on
-    // vector<vector<string>>: a matrix to store the tree for it's variable's (the key) split.
-    //vector<vector<map<string,vector<int>>>> dichotimiser_tree = { };
     vector<map<string,vector<int>>> dichotimiser_tree = { };
-    // Create example training data.
+
     map<int,string> training_data_column_map = {{0,"Id"},{1,"stream"},{2,"slope",},{3,"elevation",},{4,"vegetation"}};
     map<char, int> TEST_map = {{'jac',11}, {'sam', 12}};
      vector<vector<string>> data_matrix_vectors = {{"1", "false", "steep", "high", "chapparal"},
@@ -189,8 +262,12 @@ int main() {
 
     vector<vector<string>> transpose_test = transpose_vector_of_vectors(data_matrix_vectors);
 
-    string important_variable = calculateEntropy(transpose_test, training_data_column_map, 7.0);
+    int column_index_classification_variable = getMapKeyFromValue(training_data_column_map, "vegetation");
 
+    string important_variable = calculateEntropy(transpose_test, training_data_column_map, 7.0, column_index_classification_variable);
+
+
+    /*
 
     // variable_test_split stores a map of the previous variable split by levels as key, with data indexes as values.
     map<string, vector<int>> variable_test_split = getMapIndexOfSplitValues(transpose_test, important_variable, training_data_column_map);
@@ -205,9 +282,12 @@ int main() {
     for(auto& index:subset_columns_and_rows.column_variable_index) cout << "The column numbers to iterate over: " << index << endl;
     for(auto& index:subset_columns_and_rows.data_row_subset) cout << "The row indexes to iterate over: " << index << endl;
 
+    vector<int> test_vector = {1,2,4};
+    int min_int_in_vector = *(std::min_element(test_vector.begin(), test_vector.end()));
 
-    string conditioned_entropy = calculateEntropySecondary(transpose_test, subset_columns_and_rows.column_variable_index, training_data_column_map, subset_columns_and_rows.data_row_subset);
+    int column_index_classification_variable = getMapKeyFromValue(training_data_column_map, "vegetation");
+    cout << column_index_classification_variable;
 
-    // Print the variable name for the conditioned entropy.
-    cout << "The second variable of importance for 'high' is: " << conditioned_entropy << endl;
+     */
+
 }
