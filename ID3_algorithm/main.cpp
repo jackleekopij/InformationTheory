@@ -15,6 +15,9 @@ struct data_dimensions{
     long num_variables;
 };
 
+
+
+
 struct data_subest_entropy_calc{
     vector<int> column_variable_index;
     vector<int> data_row_subset;
@@ -22,7 +25,10 @@ struct data_subest_entropy_calc{
 
 
 
-data_dimensions getNumberOfTrainingExamples( vector<vector<string>> training_data){
+data_dimensions getDimensionsOfTrainingExamples( vector<vector<string>> training_data){
+    // getNumberOfTrainingExamples calculates the dimensions of training data
+    // args:
+    //  training_data: a matrix of training data to have dimensions calculated
     int num_training_data = training_data.size();
     int number_of_variables =  training_data[0].size();
     return data_dimensions{num_training_data, number_of_variables};
@@ -32,6 +38,9 @@ data_dimensions getNumberOfTrainingExamples( vector<vector<string>> training_dat
 
 
 vector<vector<string>> transpose_vector_of_vectors(vector<vector<string>> training_data){
+    // transpose_vector_of_vectors returns a transposed matrix
+    // args:
+    //  training_data: a matrix that is to be transpoed.
     int row_number =training_data[0].size();
     int col_number =training_data.size();
     vector<vector<string>> transposed_data;
@@ -50,9 +59,13 @@ vector<vector<string>> transpose_vector_of_vectors(vector<vector<string>> traini
 
 
 string calculateEntropy( vector<vector<string>> training_data, map<int,string> training_data_column_map,   double normalising_value){
+    // calculateEntropy returns the variable which has the highest Shanon entropy. TODO: should be changed to lowest.
+    // args:
+    //  training_data: a matrix of training data to have entropy calculated. 
+    //  training_data_column_map: a map used to translate variable names into column integers.
+    //  normalising_value: an integer needed to calcualate the marginal distribution for each variable.
     map<string,double> entropy_store;
     for(int i=0; i < training_data.size(); i++){
-        // training data by transposed row
         map<string,double> row_counts;
         for(int j=0; j<training_data[i].size(); j++){
             if(row_counts.count(training_data[i][j])){
@@ -62,7 +75,7 @@ string calculateEntropy( vector<vector<string>> training_data, map<int,string> t
                 row_counts[training_data[i][j]] = 1.0/normalising_value;
             }
         }
-        // calculate entropy
+        
         double entropy = 0;
         for(auto& element:row_counts) entropy += (-1) * element.second * log2(element.second);
         entropy_store[training_data_column_map[i]] = entropy;
@@ -85,7 +98,7 @@ string calculateEntropySecondary( vector<vector<string>> training_data, vector<i
     //  training_data: a matrix of training data
     //  variable_selection: a vector selecting variables to calculate entropy for
     //  row_selection: selecting which data points include in entropy calculation
-    //  trianing_data_column_map: column name reference map.
+    //  trianing_data_column_map: column name to column integer reference map.
 
     int normalising_value = row_selection.size();
     map<string,double> entropy_store;
@@ -117,11 +130,12 @@ string calculateEntropySecondary( vector<vector<string>> training_data, vector<i
 
 
 
-// Function to return a map of the next information gain split as a string for the value of
-// the level of the variable and the a vector storing the index of the data rows for that
-// level.
 map<string, vector<int>> getMapIndexOfSplitValues(vector<vector<string>> training_data, string variable_to_split, map<int,string> variable_to_col_num){
-    // Get col number of the variable to split the training data on.
+    // getMapIndexOfSplitValues returns a map of variable levels with row indexes as values
+    // args:
+    //  training_data: a matrix of training data
+    //  variable_to_split: a variable to partition into levels
+    //  variable_to_col_num: column name to column integer reference map.
     int split_col_number;
     for(map<int,string>::iterator it = variable_to_col_num.begin(); it != variable_to_col_num.end(); it++){
         if (it->second == variable_to_split) split_col_number = it->first;
@@ -197,7 +211,7 @@ int main() {
     for (auto& element:variable_test_split) for(auto& index:element.second) cout << "The varaible have currently split on is: " << important_variable << " with the level: " << element.first << " and the index " << index << endl;
     dichotimiser_tree.push_back(variable_test_split);
 
-    // print the dichotmiser tree so far
+    // Print out the first dichotimiser split.
     for (auto& element:dichotimiser_tree[0]) for (auto& index:element.second)  cout << "The first levels of the dichotimiser are: " << element.first << " and the index values " << index << endl;
 
     data_subest_entropy_calc subset_columns_and_rows =  GetNextDichotomiser(transpose_test, "elevation", training_data_column_map, variable_test_split);
@@ -208,6 +222,4 @@ int main() {
 
     string conditioned_entropy = calculateEntropySecondary(transpose_test, subset_columns_and_rows.column_variable_index, training_data_column_map, subset_columns_and_rows.data_row_subset);
 
-    // Print the variable name for the conditioned entropy.
-    cout << "The second variable of importance for 'high' is: " << conditioned_entropy << endl;
 }
